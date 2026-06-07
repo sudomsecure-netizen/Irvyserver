@@ -1,0 +1,37 @@
+name: Interactive LXC Terminal
+
+on:
+  workflow_dispatch: # Allows you to trigger this manually from the GitHub UI
+
+jobs:
+  lxc-ssh:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install and Configure LXC
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lxc lxc-templates
+        
+        # Verify LXC installation
+        lxc-checkconfig
+        
+        # Create an Ubuntu LXC container named "myserver"
+        sudo lxc-create -t download -n myserver -- -d ubuntu -r noble -a amd64
+
+    - name: Start LXC Container
+      run: |
+        sudo lxc-start -n myserver
+        
+        # Wait a moment for the container to boot and get an IP
+        sleep 5
+        sudo lxc-info -n myserver
+
+    - name: Setup Interactive Tmate Session
+      uses: mxschmitt/action-tmate@v3
+      with:
+        limit-access-to-actor: true # Secures the session to only your GitHub account
+        
