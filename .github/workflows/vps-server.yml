@@ -1,0 +1,41 @@
+name: Tailscale Cloud VPS
+
+on:
+  workflow_dispatch: # Allows you to start your VPS manually from the Actions tab
+
+jobs:
+  run-vps:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Connect to Tailscale Network
+      uses: tailscale/github-action@v4
+      with:
+        authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+
+    - name: Setup SSH Configuration
+      run: |
+        sudo apt-get update && sudo apt-get install -y openssh-server
+        
+        # Pull your public SSH keys directly from GitHub to authorize your phone
+        mkdir -p ~/.ssh
+        curl -s https://github.com/${{ github.actor }}.keys >> ~/.ssh/authorized_keys
+        chmod 700 ~/.ssh
+        chmod 600 ~/.ssh/authorized_keys
+        
+        # Start the SSH background daemon
+        sudo service ssh start
+
+    - name: Keep VPS Alive (Sleep Loop)
+      run: |
+        echo "=========================================================="
+        echo "VPS is officially up! Check your Tailscale App for the IP."
+        echo "You can connect using: ssh runner@<Tailscale-IP>"
+        echo "=========================================================="
+        
+        # Keeps the runner alive for 6 hours (GitHub's maximum job limit)
+        sleep 21600
+        
